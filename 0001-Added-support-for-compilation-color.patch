@@ -1,0 +1,103 @@
+From 740c29ac0d8f074f808db30e0789ed698b08e49d Mon Sep 17 00:00:00 2001
+From: Naskel <naskel@gmail.com>
+Date: Fri, 23 Oct 2015 07:43:12 +0200
+Subject: [PATCH 1/1] Added support for compilation color
+
+---
+ src/build.c     | 13 ++++++++++++-
+ src/msgwindow.c |  3 +++
+ src/msgwindow.h |  9 +++++----
+ src/toolbar.c   |  6 +++++-
+ 4 files changed, 25 insertions(+), 6 deletions(-)
+
+diff --git a/src/build.c b/src/build.c
+index 6703b16..6e83165 100644
+--- a/src/build.c
++++ b/src/build.c
+@@ -921,6 +921,17 @@ static void build_run_cmd(GeanyDocument *doc, guint cmdindex)
+ 	g_free(run_cmd);
+ }
+ 
++static gint search_error_code(gchar *msg)
++{
++	static gint last_color = COLOR_RED;
++
++	if ( strstr(msg, " warning:") )
++		last_color = COLOR_DARK_YELLOW;
++	else if ( strstr(msg, " error:") )
++		last_color = COLOR_RED;
++
++	return last_color;
++}
+ 
+ static void process_build_output_line(gchar *msg, gint color)
+ {
+@@ -952,7 +963,7 @@ static void process_build_output_line(gchar *msg, gint color)
+ 			editor_indicator_set_on_line(doc->editor, GEANY_INDICATOR_ERROR, line);
+ 		}
+ 		build_info.message_count++;
+-		color = COLOR_RED;	/* error message parsed on the line */
++		color = search_error_code(msg);
+ 	}
+ 	g_free(filename);
+ 
+diff --git a/src/msgwindow.c b/src/msgwindow.c
+index 4e580b8..4c321b3 100644
+--- a/src/msgwindow.c
++++ b/src/msgwindow.c
+@@ -268,12 +268,15 @@ static const GdkColor color_error = {0, 65535, 0, 0};
+ static const GdkColor *get_color(gint msg_color)
+ {
+ 	static const GdkColor dark_red = {0, 65535 / 2, 0, 0};
++	//static const GdkColor dark_yellow = {0xFFFF, 0xFFFF, 0, 0};
++	static const GdkColor dark_yellow = {0, 65535 / 2, 65535 / 2, 0};
+ 	static const GdkColor blue = {0, 0, 0, 0xD000};	/* not too bright ;-) */
+ 
+ 	switch (msg_color)
+ 	{
+ 		case COLOR_RED: return &color_error;
+ 		case COLOR_DARK_RED: return &dark_red;
++		case COLOR_DARK_YELLOW: return &dark_yellow;
+ 		case COLOR_BLUE: return &blue;
+ 		default: return NULL;
+ 	}
+diff --git a/src/msgwindow.h b/src/msgwindow.h
+index dc5fc35..872724c 100644
+--- a/src/msgwindow.h
++++ b/src/msgwindow.h
+@@ -34,10 +34,11 @@ G_BEGIN_DECLS
+  **/
+ enum MsgColors
+ {
+-	COLOR_RED,		/**< Color red */
+-	COLOR_DARK_RED,	/**< Color dark red */
+-	COLOR_BLACK,	/**< Color black */
+-	COLOR_BLUE		/**< Color blue */
++	COLOR_RED,			/**< Color red */
++	COLOR_DARK_RED,		/**< Color dark red */
++	COLOR_BLACK,		/**< Color black */
++	COLOR_BLUE,			/**< Color blue */
++	COLOR_DARK_YELLOW	/**< Color dark yellow */
+ };
+ 
+ /** Indices of the notebooks in the messages window. */
+diff --git a/src/toolbar.c b/src/toolbar.c
+index ee4e50e..b4e80f0 100644
+--- a/src/toolbar.c
++++ b/src/toolbar.c
+@@ -81,7 +81,11 @@ static const GtkActionEntry ui_entries[] = {
+ 	{ "Preferences", GTK_STOCK_PREFERENCES, NULL, NULL, N_("Show the preferences dialog"), G_CALLBACK(on_preferences1_activate) },
+ 	{ "Quit", GTK_STOCK_QUIT, NULL, NULL, N_("Quit Geany"), G_CALLBACK(on_quit1_activate) },
+ 	{ "Print", GTK_STOCK_PRINT, NULL, NULL, N_("Print document"), G_CALLBACK(on_print1_activate) },
+-	{ "Replace", GTK_STOCK_FIND_AND_REPLACE, NULL, NULL, N_("Replace text in the current document"), G_CALLBACK(on_replace1_activate) }
++	{ "Replace", GTK_STOCK_FIND_AND_REPLACE, NULL, NULL, N_("Replace text in the current document"), G_CALLBACK(on_replace1_activate) },
++	
++	// hack
++	{ "Previous", GTK_STOCK_GO_UP, NULL, NULL, N_("Find the previous selected text in the current file"), G_CALLBACK(on_find_prevsel1_activate) },
++	{ "Next", GTK_STOCK_GO_DOWN, NULL, NULL, N_("Find the next selected text in the current file"), G_CALLBACK(on_find_nextsel1_activate) }
+ };
+ static const guint ui_entries_n = G_N_ELEMENTS(ui_entries);
+ 
+-- 
+2.1.4
+
