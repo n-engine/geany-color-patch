@@ -1,0 +1,53 @@
+From 0cd0eaccb0c15b6ee441cbbaa73f0ca929f51e31 Mon Sep 17 00:00:00 2001
+From: Naskel <naskel@gmail.com>
+Date: Mon, 16 Nov 2015 22:53:47 +0100
+Subject: [PATCH] Added support for click on warning message with new color
+
+---
+ src/msgwindow.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/src/msgwindow.c b/src/msgwindow.c
+index 4c321b3..4d85dd0 100644
+--- a/src/msgwindow.c
++++ b/src/msgwindow.c
+@@ -264,19 +264,20 @@ static void prepare_compiler_tree_view(void)
+ 
+ 
+ static const GdkColor color_error = {0, 65535, 0, 0};
++static const GdkColor color_warning = {0, 65535 / 2, 65535 / 2, 0};
+ 
+ static const GdkColor *get_color(gint msg_color)
+ {
+ 	static const GdkColor dark_red = {0, 65535 / 2, 0, 0};
+ 	//static const GdkColor dark_yellow = {0xFFFF, 0xFFFF, 0, 0};
+-	static const GdkColor dark_yellow = {0, 65535 / 2, 65535 / 2, 0};
++	//static const GdkColor dark_yellow = {0, 65535 / 2, 65535 / 2, 0};
+ 	static const GdkColor blue = {0, 0, 0, 0xD000};	/* not too bright ;-) */
+ 
+ 	switch (msg_color)
+ 	{
+ 		case COLOR_RED: return &color_error;
+ 		case COLOR_DARK_RED: return &dark_red;
+-		case COLOR_DARK_YELLOW: return &dark_yellow;
++		case COLOR_DARK_YELLOW: return &color_warning;
+ 		case COLOR_BLUE: return &blue;
+ 		default: return NULL;
+ 	}
+@@ -726,8 +727,11 @@ gboolean msgwin_goto_compiler_file_line(gboolean focus_editor)
+ 	if (gtk_tree_selection_get_selected(selection, &model, &iter))
+ 	{
+ 		/* if the item is not coloured red, it's not an error line */
+-		gtk_tree_model_get(model, &iter, COMPILER_COL_COLOR, &color, -1);
+-		if (color == NULL || ! gdk_color_equal(color, &color_error))
++		gtk_tree_model_get(model, &iter, COMPILER_COL_COLOR, &color, -1); 
++		if (color == NULL || 
++			( !gdk_color_equal(color, &color_error) &&
++			!gdk_color_equal(color, &color_warning) )
++		)
+ 		{
+ 			if (color != NULL)
+ 				gdk_color_free(color);
+-- 
+2.1.4
+
